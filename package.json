@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Static site generating a grid of squares covering the whole viewport",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "browser-sync start --server --ss ./src --watch --port 8080"
   },
   "repository": {
     "type": "git",
@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/ratasorin/TEO-ma-pune-sa-fac-repositori-uri#readme",
   "devDependencies": {
+    "browser-sync": "^2.26.13",
     "prettier": "^2.2.0"
   }
 }
