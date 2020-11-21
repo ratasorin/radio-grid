@@ -1,0 +1,21 @@
+{
+  "name": "square-grid",
+  "version": "0.1.0",
+  "description": "Static site generating a grid of squares covering the whole viewport",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ratasorin/TEO-ma-pune-sa-fac-repositori-uri.git"
+  },
+  "author": "Rata Sorin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ratasorin/TEO-ma-pune-sa-fac-repositori-uri/issues"
+  },
+  "homepage": "https://github.com/ratasorin/TEO-ma-pune-sa-fac-repositori-uri#readme",
+  "devDependencies": {
+    "prettier": "^2.2.0"
+  }
+}
