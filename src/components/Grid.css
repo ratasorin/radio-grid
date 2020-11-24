@@ -8,7 +8,7 @@
 }
 
 .grid {
-  min-width: calc(100% + 2 * var(--size, var(--default-side-length)));
+  min-width: calc(100% + var(--size, var(--default-side-length)));
   min-height: 100%;
   display: grid;
   grid-template-columns: repeat(

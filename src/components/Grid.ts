@@ -1,5 +1,5 @@
 import ResizeObserver from 'resize-observer-polyfill'
-import Square from './Square'
+import { Square, SquareEventListeners } from './Square'
 import { generateArray, randInt } from '../util'
 
 import './Grid.css'
@@ -11,10 +11,11 @@ interface GridProperties {
     height: string
     squaresPerRow: number
     colors: string[]
+    squareEventListeners?: SquareEventListeners
   }
 }
 
-export default class Grid {
+class Grid {
   private readonly element = document.createElement('div')
   private readonly grid = document.createElement('div')
   private readonly colors: string[]
@@ -41,6 +42,7 @@ export default class Grid {
       () =>
         new Square({
           color: this.colors[randInt(this.colors.length)],
+          eventListeners: properties.props.squareEventListeners,
         })
     )
     for (const square of this.squares) {
@@ -56,6 +58,7 @@ export default class Grid {
           () =>
             new Square({
               color: this.colors[randInt(this.colors.length)],
+              eventListeners: properties.props.squareEventListeners,
             })
         )
         for (const square of newSquares) {
@@ -63,9 +66,7 @@ export default class Grid {
         }
         this.squares = this.squares.concat(newSquares)
       } else {
-        this.squares
-          .splice(count, -difference)
-          .forEach((square) => square.destroy())
+        this.squares.splice(count).forEach((square) => square.destroy(false))
       }
       this.squareSideLength = sideLength
     })
@@ -100,12 +101,36 @@ export default class Grid {
     const width = this.getWidth()
     const height = this.getHeight()
     const sideLength = Math.max(width, height) / this.squaresPerRow
+    // TODO: Fix generation of excess squares
     const count =
-      (this.squaresPerRow + 2) * (Math.floor(height / sideLength) + 2)
+      (this.squaresPerRow + 1) * (Math.floor(height / sideLength) + 1)
     return { sideLength, count }
   }
 
-  destroy() {
-    this.grid.remove()
+  destroy(animate: boolean) {
+    return new Promise<void>((resolve) => {
+      const remove = () => {
+        this.element.remove()
+        resolve()
+      }
+      if (!this.element) {
+        resolve()
+      }
+      if (animate) {
+        let promise: Promise<void>
+        const interval = setInterval(async () => {
+          if (this.squares.length === 0) {
+            clearInterval(interval)
+            await promise
+            remove()
+          }
+          promise = this.squares.pop()?.destroy(true) || promise
+        }, 50)
+      } else {
+        remove()
+      }
+    })
   }
 }
+
+export { Grid, GridProperties }
