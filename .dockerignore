@@ -1,5 +1,6 @@
 .gitignore
 .prettierrc
-node_modules
+node_modules/
 .vscode/
 .git/
+public/build/

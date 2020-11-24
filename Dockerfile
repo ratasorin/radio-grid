@@ -1,8 +1,9 @@
-FROM node:14-alpine
-USER node:node
-RUN mkdir /home/node/app
-WORKDIR /home/node/app
+FROM node:14-alpine AS build
+WORKDIR /build
 COPY package*.json ./
 RUN npm ci
 COPY . .
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+FROM nginx:1.19-alpine
+COPY --from=build /build/public /usr/share/nginx/html
