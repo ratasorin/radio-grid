@@ -3,11 +3,9 @@
   "exclude": ["node_modules"],
   "compilerOptions": {
     "target": "ES5",
-    "lib": ["ESNext", "DOM"],
     "module": "ESNext",
     "moduleResolution": "node",
-    "removeComments": true,
-    "noImplicitAny": true,
+    "strict": true,
     "sourceMap": true
   }
 }
