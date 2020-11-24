@@ -1,6 +1,6 @@
 const generateArray = <T>(
   length: number,
-  generatorFunc: (elem?: T, index?: number, array?: T[]) => T
+  generatorFunc: (elem: T, index: number, array: T[]) => T
 ): T[] => new Array(length).fill(null).map(generatorFunc)
 
 const randInt = (limit: number) => Math.floor(Math.random() * limit)
