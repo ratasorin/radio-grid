@@ -1,6 +1,6 @@
 import ResizeObserver from 'resize-observer-polyfill'
-import Square from '../Square/Square'
-import { generateArray, randInt } from '../../util'
+import Square from './Square'
+import { generateArray, randInt } from '../util'
 
 import './Grid.css'
 
