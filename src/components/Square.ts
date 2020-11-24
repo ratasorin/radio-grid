@@ -1,15 +1,29 @@
 import './Square.css'
 
-export interface SquareProperties {
-  color: string
+type SquareEventListener = (square: Square, event: Event) => void
+
+type SquareEventListeners = {
+  [key: string]: SquareEventListener
 }
 
-export default class Square {
+interface SquareProperties {
+  color: string
+  eventListeners?: SquareEventListeners
+}
+
+class Square {
   private readonly element = document.createElement('div')
 
   constructor(properties: SquareProperties) {
-    ;({ color: this.color } = properties)
+    this.color = properties.color
     this.element.classList.add('grid__square')
+    const events = properties.eventListeners
+    for (const event in events) {
+      if (Object.prototype.hasOwnProperty.call(events, event)) {
+        const callback = events[event]
+        this.element.addEventListener(event, (ev) => callback(this, ev))
+      }
+    }
   }
 
   get color(): string {
@@ -22,7 +36,20 @@ export default class Square {
   appendTo(parent: Node) {
     parent.appendChild(this.element)
   }
-  destroy() {
-    this.element.remove()
+  destroy(animate: boolean) {
+    return new Promise<void>((resolve) => {
+      const remove = () => {
+        this.element.remove()
+        resolve()
+      }
+      if (animate) {
+        this.element.addEventListener('transitionend', remove)
+        this.element.classList.add('grid__square--deleted')
+      } else {
+        remove()
+      }
+    })
   }
 }
+
+export { Square, SquareProperties, SquareEventListeners, SquareEventListener }
