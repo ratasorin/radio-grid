@@ -17,7 +17,6 @@ export default class Grid {
   private readonly grid = document.createElement('div')
   private readonly colors: string[]
   private readonly squaresPerRow: number
-  private observer: ResizeObserver
   private squares: Square[]
 
   constructor(properties: GridProperties) {
@@ -44,7 +43,7 @@ export default class Grid {
     for (const square of this.squares) {
       square.appendTo(this.grid)
     }
-    this.observer = new ResizeObserver(() => {
+    const observer = new ResizeObserver(() => {
       const { count, sideLength } = this.getSquareData()
       const currentCount = this.grid.children.length
       const difference = count - currentCount
@@ -67,7 +66,7 @@ export default class Grid {
       }
       this.squareSideLength = sideLength
     })
-    this.observer.observe(this.element)
+    observer.observe(this.element)
   }
 
   private get width(): string {
@@ -104,7 +103,6 @@ export default class Grid {
   }
 
   destroy() {
-    this.observer.disconnect()
     this.grid.remove()
   }
 }
