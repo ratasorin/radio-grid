@@ -13,15 +13,18 @@ interface GridProperties {
 }
 
 export default class Grid {
-  private readonly element: HTMLElement
+  private readonly element = document.createElement('div')
   private readonly grid = document.createElement('div')
   private readonly colors: string[]
   private readonly squaresPerRow: number
   private squares: Square[]
 
   constructor(properties: GridProperties) {
+    this.element.classList.add('grid__parent')
+    properties.target.appendChild(this.element)
+    this.grid.classList.add('grid')
+    this.element.appendChild(this.grid)
     ;({
-      target: this.element,
       props: {
         colors: this.colors,
         width: this.width,
@@ -29,8 +32,6 @@ export default class Grid {
         squaresPerRow: this.squaresPerRow,
       },
     } = properties)
-    this.grid.classList.add('grid')
-    this.element.appendChild(this.grid)
     const { sideLength, count } = this.getSquareData()
     this.squareSideLength = sideLength
     this.squares = generateArray(
