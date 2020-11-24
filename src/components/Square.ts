@@ -42,6 +42,9 @@ class Square {
         this.element.remove()
         resolve()
       }
+      if (!this.element) {
+        resolve()
+      }
       if (animate) {
         this.element.addEventListener('transitionend', remove)
         this.element.classList.add('grid__square--deleted')
