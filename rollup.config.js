@@ -4,6 +4,9 @@ import resolve from '@rollup/plugin-node-resolve'
 import typescript from 'rollup-plugin-typescript2'
 import commonjs from '@rollup/plugin-commonjs'
 import serve from 'rollup-plugin-serve'
+import postcss from 'rollup-plugin-postcss'
+import postcssPresetEnv from 'postcss-preset-env'
+import cssnano from 'cssnano'
 
 export default ({ watch }) => ({
   input: './src/index.ts',
@@ -14,7 +17,13 @@ export default ({ watch }) => ({
     name: 'grid',
   },
   plugins: [
+    postcss({
+      extract: true,
+      plugins: [postcssPresetEnv(), cssnano()],
+    }),
     resolve({
+      jsnext: true,
+      main: true,
       browser: true,
     }),
     commonjs(),

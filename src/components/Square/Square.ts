@@ -1,3 +1,5 @@
+import './Square.css'
+
 export interface SquareProperties {
   color: string
 }
