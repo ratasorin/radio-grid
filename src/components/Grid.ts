@@ -76,38 +76,46 @@ class Grid {
   private get width(): string {
     return this.element.style.getPropertyValue('--width')
   }
+
   private set width(width: string) {
     this.element.style.setProperty('--width', width)
   }
+
   private getWidth(): number {
     return parseInt(window.getComputedStyle(this.element).width, 10)
   }
+
   private get height(): string {
     return this.element.style.getPropertyValue('--height')
   }
+
   private set height(height: string) {
     this.element.style.setProperty('--height', height)
   }
+
   private getHeight(): number {
     return parseInt(window.getComputedStyle(this.element).height, 10)
   }
+
   private get squareSideLength(): number {
     return parseInt(this.grid.style.getPropertyValue('--size'), 10)
   }
+
   private set squareSideLength(squareSideLength: number) {
     this.grid.style.setProperty('--size', `${squareSideLength}px`)
   }
+
   private getSquareData() {
     const width = this.getWidth()
     const height = this.getHeight()
     const sideLength = Math.max(width, height) / this.squaresPerRow
-    // TODO: Fix generation of excess squares
     const count =
-      (this.squaresPerRow + 1) * (Math.floor(height / sideLength) + 1)
+      (this.squaresPerRow + 1) *
+      Math.floor(Math.min(width, height) / sideLength + 1)
     return { sideLength, count }
   }
 
-  destroy(animate: boolean) {
+  destroy(animate: boolean): Promise<void> {
     return new Promise<void>((resolve) => {
       const remove = () => {
         this.element.remove()
@@ -126,7 +134,7 @@ class Grid {
             remove()
             return
           }
-          promise = this.squares.pop()?.destroy(true) || promise
+          promise = (this.squares.pop() as Square).destroy(true)
         }, 50)
       } else {
         remove()

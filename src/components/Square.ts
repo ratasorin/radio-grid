@@ -33,10 +33,11 @@ class Square {
     this.element.style.setProperty('--color', color)
   }
 
-  appendTo(parent: Node) {
+  appendTo(parent: Node): void {
     parent.appendChild(this.element)
   }
-  destroy(animate: boolean) {
+
+  destroy(animate: boolean): Promise<void> {
     return new Promise<void>((resolve) => {
       const remove = () => {
         this.element.remove()
