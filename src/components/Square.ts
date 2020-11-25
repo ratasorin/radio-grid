@@ -44,6 +44,7 @@ class Square {
       }
       if (!this.element) {
         resolve()
+        return
       }
       if (animate) {
         this.element.addEventListener('transitionend', remove)
