@@ -7,6 +7,7 @@ import serve from 'rollup-plugin-serve'
 import postcss from 'rollup-plugin-postcss'
 import postcssPresetEnv from 'postcss-preset-env'
 import cssnano from 'cssnano'
+import eslint from '@rollup/plugin-eslint'
 
 export default ({ watch }) => ({
   input: './src/index.ts',
@@ -21,6 +22,7 @@ export default ({ watch }) => ({
       extract: true,
       plugins: [postcssPresetEnv(), cssnano()],
     }),
+    eslint(),
     resolve({
       jsnext: true,
       main: true,
