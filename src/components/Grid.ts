@@ -115,6 +115,7 @@ class Grid {
       }
       if (!this.element) {
         resolve()
+        return
       }
       if (animate) {
         let promise: Promise<void>
@@ -123,6 +124,7 @@ class Grid {
             clearInterval(interval)
             await promise
             remove()
+            return
           }
           promise = this.squares.pop()?.destroy(true) || promise
         }, 50)
