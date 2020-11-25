@@ -29,31 +29,32 @@ class Square {
   get color(): string {
     return this.element.style.getPropertyValue('--color')
   }
+
   set color(color: string) {
     this.element.style.setProperty('--color', color)
   }
 
-  appendTo(parent: Node): void {
+  async appendTo(parent: Node, animate: boolean): Promise<void> {
     parent.appendChild(this.element)
+    if (animate) {
+      this.element.classList.add('grid__square--inserted')
+      await new Promise<void>((resolve) => {
+        this.element.addEventListener('animationend', () => {
+          this.element.classList.remove('grid__square--inserted')
+          resolve()
+        })
+      })
+    }
   }
 
-  destroy(animate: boolean): Promise<void> {
-    return new Promise<void>((resolve) => {
-      const remove = () => {
-        this.element.remove()
-        resolve()
-      }
-      if (!this.element) {
-        resolve()
-        return
-      }
-      if (animate) {
-        this.element.addEventListener('transitionend', remove)
+  async destroy(animate: boolean): Promise<void> {
+    if (animate) {
+      await new Promise<void>((resolve) => {
+        this.element.addEventListener('animationend', () => resolve())
         this.element.classList.add('grid__square--deleted')
-      } else {
-        remove()
-      }
-    })
+      })
+    }
+    this.element.remove()
   }
 }
 
