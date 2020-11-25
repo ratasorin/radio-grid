@@ -1,5 +1,5 @@
-import { Grid, GridProperties } from './components/Grid'
-import { generateArray, randInt } from './util'
+import { Grid } from './components/Grid'
+import { randInt } from './util'
 
 import './reset.css'
 import './style.css'
@@ -10,11 +10,14 @@ const colors = [
 ]
 
 const grid = new Grid({
-  target: document.body,
-  props: {
-    width: `100vw`,
-    height: `100vh`,
-    squaresPerRow: 10,
-    colors: colors[randInt(colors.length)],
-  },
+  width: `100vw`,
+  height: `100vh`,
+  squaresPerRow: 10,
+  colors: colors[randInt(colors.length)],
 })
+
+const main = async () => {
+  await grid.appendTo(document.body, true)
+}
+
+main()
