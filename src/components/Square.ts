@@ -7,22 +7,64 @@ type SquareEventListeners = {
 }
 
 interface SquareProperties {
+  id?: number
   color: string
   eventListeners?: SquareEventListeners
 }
 
 class Square {
   private readonly element = document.createElement('div')
+  private userEvents: {
+    [key: string]: (ev: Event) => void
+  } = {}
 
   constructor(properties: SquareProperties) {
-    this.color = properties.color
+    // eslint-disable-next-line @typescript-eslint/no-extra-semi
     this.element.classList.add('grid__square')
-    const events = properties.eventListeners
-    for (const event in events) {
-      if (Object.prototype.hasOwnProperty.call(events, event)) {
-        const callback = events[event]
-        this.element.addEventListener(event, (ev) => callback(this, ev))
+    ;({ id: this.id, color: this.color } = properties)
+    for (const event in properties.eventListeners) {
+      if (Object.prototype.hasOwnProperty.call(properties.eventListeners, event)) {
+        const callback = properties.eventListeners[event]
+        this.addEventListener(event, callback)
       }
+    }
+    this.element.addEventListener('mouseenter', () => {
+      this.element.style.zIndex = `${2}`
+    })
+    this.element.addEventListener('mouseleave', () => {
+      const events = ['transitionend', 'transitioncancel']
+      const transitionEventHandler = () => {
+        this.element.style.zIndex = ''
+        events.forEach((event) => this.element.removeEventListener(event, transitionEventHandler))
+      }
+      this.element.style.zIndex = `${1}`
+      events.forEach((event) => this.element.addEventListener(event, transitionEventHandler))
+    })
+  }
+
+  removeEventListener(event: string): void {
+    if (Object.prototype.hasOwnProperty.call(this.userEvents, event)) {
+      this.element.removeEventListener(event, this.userEvents[event])
+    }
+  }
+
+  addEventListener(event: string, callback: SquareEventListener): void {
+    const eventCallback = (ev: Event) => callback(this, ev)
+    this.userEvents[event] = eventCallback
+    this.element.addEventListener(event, eventCallback)
+  }
+
+  set id(value: number | undefined) {
+    if (value != 0 && !value) {
+      return
+    }
+    this.element.setAttribute('data-id', `${value}`)
+  }
+
+  get id(): number | undefined {
+    const id = this.element.getAttribute('data-id')
+    if (id) {
+      return parseInt(id, 10)
     }
   }
 
@@ -54,6 +96,7 @@ class Square {
         this.element.classList.add('grid__square--deleted')
       })
     }
+    this.element.setAttribute('data-id', `${-1}`)
     this.element.remove()
   }
 }
