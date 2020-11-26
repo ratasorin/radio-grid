@@ -1,4 +1,44 @@
 body {
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid__parent {
+  margin-top: 3em;
+  width: 1000px;
+  height: 500px;
+  filter: drop-shadow(14px 10px 27px rgba(0, 0, 0, 0.68));
+}
+
+h1 {
+  font-family: 'Poppins', sans-serif;
+}
+
+p {
+  font-family: 'Heebo', sans-serif;
+}
+
+h1,
+p {
+  color: #000f1e;
+}
+
+body {
+  background-color: whitesmoke;
+}
+
+@media (prefers-color-scheme: dark) {
+  h1,
+  p {
+    color: whitesmoke;
+  }
+
+  body {
+    background-color: #000f1e;
+  }
 }
