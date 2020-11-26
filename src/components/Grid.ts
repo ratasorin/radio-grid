@@ -96,7 +96,6 @@ class Grid {
     const height = this.getHeight()
     const [row, column] = [Math.max(width, height), Math.min(width, height)]
     const sideLength = Math.sqrt((row * column) / count)
-    console.log(sideLength)
     return { sideLength }
   }
 
