@@ -2,21 +2,22 @@ import { Square, SquareEventListeners } from './Square'
 import { generateArray, randInt } from '../util'
 
 import './Grid.css'
+import ResizeObserver from 'resize-observer-polyfill'
 
 interface GridProperties {
   colors: string[]
-  squaresPerRow: number
+  squareCount: number
   squareEventListeners?: SquareEventListeners
 }
 
-const generateSquares = (startID: number, count: number, colors: string[], events?: SquareEventListeners) =>
+const generateSquares = (startID: number, props: GridProperties) =>
   generateArray<Square>(
-    count,
+    props.squareCount,
     (_, i) =>
       new Square({
         id: startID + i,
-        color: colors[randInt(colors.length)],
-        eventListeners: events,
+        color: props.colors[randInt(props.colors.length)],
+        eventListeners: props.squareEventListeners,
       })
   )
 
@@ -24,12 +25,17 @@ class Grid {
   private readonly element = document.createElement('div')
   private readonly properties: GridProperties
   private squares: Square[] = []
-  private readonly observer: MutationObserver
+  private readonly mutationObserver: MutationObserver
+  private readonly resizeObserver: ResizeObserver
 
   constructor(properties: GridProperties) {
     this.properties = properties
     this.element.classList.add('grid')
-    this.observer = new MutationObserver((mutations) => {
+    this.resizeObserver = new ResizeObserver(() => {
+      const { sideLength } = this.getSquareData()
+      this.squareSideLength = sideLength
+    })
+    this.mutationObserver = new MutationObserver((mutations) => {
       mutations
         .filter((mut) => !mut.target.isConnected)
         .map((mut) => parseInt(mut.oldValue as string, 10))
@@ -85,35 +91,35 @@ class Grid {
   }
 
   private getSquareData() {
-    const rowCount = this.properties.squaresPerRow
+    const count = this.properties.squareCount
     const width = this.getWidth()
     const height = this.getHeight()
     const [row, column] = [Math.max(width, height), Math.min(width, height)]
-    const sideLength = row / rowCount
-    const columnCount = Math.floor(column / sideLength)
-    const count = rowCount * columnCount
-    return { sideLength, count }
+    const sideLength = Math.sqrt((row * column) / count)
+    console.log(sideLength)
+    return { sideLength }
   }
 
   async appendTo(parent: Node, animate: boolean): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-extra-semi
     parent.appendChild(this.element)
-    const { sideLength, count } = this.getSquareData()
+    const { sideLength } = this.getSquareData()
     this.squareSideLength = sideLength
-    this.squares = generateSquares(0, count, this.properties.colors, this.properties.squareEventListeners)
+    this.squares = generateSquares(0, this.properties)
     this.element.classList.add('grid--no-interaction')
     await this.appendSquares(this.squares, animate)
-    this.observer.observe(this.element, {
+    this.mutationObserver.observe(this.element, {
       attributes: true,
       subtree: true,
       attributeFilter: ['data-id'],
       attributeOldValue: true,
     })
+    this.resizeObserver.observe(this.element)
     this.element.classList.remove('grid--no-interaction')
   }
 
   async destroy(animate: boolean): Promise<void> {
-    this.observer.disconnect()
+    this.mutationObserver.disconnect()
     this.element.classList.add('grid--no-interaction')
     if (animate) {
       await new Promise<void>((resolve) => {

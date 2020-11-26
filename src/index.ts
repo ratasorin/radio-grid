@@ -27,7 +27,7 @@ const squareMousedown: SquareEventListener = async (square) => {
 }
 
 const grid = new Grid({
-  squaresPerRow: 10,
+  squareCount: 48,
   colors: colors[prefersDarkMode ? 0 : 1],
   squareEventListeners: {
     mousedown: squareMousedown,
