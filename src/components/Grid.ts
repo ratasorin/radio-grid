@@ -1,22 +1,20 @@
-import ResizeObserver from 'resize-observer-polyfill'
 import { Square, SquareEventListeners } from './Square'
 import { generateArray, randInt } from '../util'
 
 import './Grid.css'
 
 interface GridProperties {
-  width: string
-  height: string
   colors: string[]
   squaresPerRow: number
   squareEventListeners?: SquareEventListeners
 }
 
-const generateSquares = (count: number, colors: string[], events?: SquareEventListeners) =>
-  generateArray(
+const generateSquares = (startID: number, count: number, colors: string[], events?: SquareEventListeners) =>
+  generateArray<Square>(
     count,
-    () =>
+    (_, i) =>
       new Square({
+        id: startID + i,
         color: colors[randInt(colors.length)],
         eventListeners: events,
       })
@@ -24,59 +22,32 @@ const generateSquares = (count: number, colors: string[], events?: SquareEventLi
 
 class Grid {
   private readonly element = document.createElement('div')
-  private readonly grid = document.createElement('div')
-  private readonly colors: string[]
-  private readonly squareEvents?: SquareEventListeners
-  private readonly squaresPerRow: number
+  private readonly properties: GridProperties
   private squares: Square[] = []
-  private readonly resizeObserver: ResizeObserver
+  private readonly observer: MutationObserver
 
   constructor(properties: GridProperties) {
-    this.element.classList.add('grid__parent')
-    this.grid.classList.add('grid')
-    this.element.appendChild(this.grid)
-    ;({
-      colors: this.colors,
-      width: this.width,
-      height: this.height,
-      squaresPerRow: this.squaresPerRow,
-      squareEventListeners: this.squareEvents,
-    } = properties)
-    this.resizeObserver = new ResizeObserver(() => {
-      const { count, sideLength } = this.getSquareData()
-      const currentCount = this.grid.children.length
-      const difference = count - currentCount
-      if (difference > 0) {
-        const newSquares = generateSquares(difference, this.colors, this.squareEvents)
-        for (const square of newSquares) {
-          square.appendTo(this.grid, false)
-        }
-        this.squares = this.squares.concat(newSquares)
-      } else {
-        this.squares.splice(count).forEach((square) => square.destroy(false))
-      }
-      this.squareSideLength = sideLength
+    this.properties = properties
+    this.element.classList.add('grid')
+    this.observer = new MutationObserver((mutations) => {
+      mutations
+        .filter((mut) => !mut.target.isConnected)
+        .map((mut) => parseInt(mut.oldValue as string, 10))
+        .forEach((index) => {
+          this.squares.splice(index, 1)
+          for (let i = index; i < this.squares.length; i++) {
+            this.squares[i].id = i
+          }
+        })
     })
   }
 
-  private get width(): string {
-    return this.element.style.getPropertyValue('--width')
-  }
-
-  private set width(width: string) {
-    this.element.style.setProperty('--width', width)
+  get currentSquareCount(): number {
+    return this.squares.length
   }
 
   private getWidth(): number {
     return parseInt(window.getComputedStyle(this.element).width, 10)
-  }
-
-  private get height(): string {
-    return this.element.style.getPropertyValue('--height')
-  }
-
-  private set height(height: string) {
-    this.element.style.setProperty('--height', height)
   }
 
   private getHeight(): number {
@@ -84,29 +55,17 @@ class Grid {
   }
 
   private get squareSideLength(): number {
-    return parseInt(this.grid.style.getPropertyValue('--size'), 10)
+    return parseInt(this.element.style.getPropertyValue('--size'), 10)
   }
 
   private set squareSideLength(squareSideLength: number) {
-    this.grid.style.setProperty('--size', `${squareSideLength}px`)
+    this.element.style.setProperty('--size', `${squareSideLength}px`)
   }
 
-  private getSquareData() {
-    const width = this.getWidth()
-    const height = this.getHeight()
-    const sideLength = Math.max(width, height) / this.squaresPerRow
-    const count = (this.squaresPerRow + 1) * Math.floor(Math.min(width, height) / sideLength + 1)
-    return { sideLength, count }
-  }
-
-  async appendTo(parent: Node, animate: boolean): Promise<void> {
-    parent.appendChild(this.element)
-    const { sideLength, count } = this.getSquareData()
-    this.squareSideLength = sideLength
-    this.squares = generateSquares(count, this.colors, this.squareEvents)
+  private async appendSquares(squares: Square[], animate: boolean): Promise<void> {
     if (animate) {
       await new Promise<void>((resolve) => {
-        const it = this.squares.values()
+        const it = squares.values()
         let promise: Promise<void> | undefined
         const interval = setInterval(() => {
           const square = it.next()
@@ -115,18 +74,47 @@ class Grid {
             promise?.then(resolve)
             return
           }
-          promise = square.value.appendTo(this.grid, true)
+          promise = square.value.appendTo(this.element, true)
         }, 50)
       })
     } else {
-      for (const square of this.squares) {
-        square.appendTo(this.grid, false)
+      for (const square of squares) {
+        square.appendTo(this.element, false)
       }
     }
-    this.resizeObserver.observe(this.element)
+  }
+
+  private getSquareData() {
+    const rowCount = this.properties.squaresPerRow
+    const width = this.getWidth()
+    const height = this.getHeight()
+    const [row, column] = [Math.max(width, height), Math.min(width, height)]
+    const sideLength = row / rowCount
+    const columnCount = Math.floor(column / sideLength)
+    const count = rowCount * columnCount
+    return { sideLength, count }
+  }
+
+  async appendTo(parent: Node, animate: boolean): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-extra-semi
+    parent.appendChild(this.element)
+    const { sideLength, count } = this.getSquareData()
+    this.squareSideLength = sideLength
+    this.squares = generateSquares(0, count, this.properties.colors, this.properties.squareEventListeners)
+    this.element.classList.add('grid--no-interaction')
+    await this.appendSquares(this.squares, animate)
+    this.observer.observe(this.element, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['data-id'],
+      attributeOldValue: true,
+    })
+    this.element.classList.remove('grid--no-interaction')
   }
 
   async destroy(animate: boolean): Promise<void> {
+    this.observer.disconnect()
+    this.element.classList.add('grid--no-interaction')
     if (animate) {
       await new Promise<void>((resolve) => {
         let promise: Promise<void> | undefined
@@ -140,6 +128,7 @@ class Grid {
         }, 50)
       })
     }
+    this.element.classList.remove('grid--no-interaction')
     this.element.remove()
   }
 }
