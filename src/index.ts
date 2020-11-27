@@ -26,7 +26,7 @@ const squareMousedown: SquareEventListener<'mousedown'> = async function () {
     return
   }
   const removed = grid.removeSquare(this, true)
-  log(`${grid.existingSquares.length} squares left`)
+  log(`${grid.squares.length} squares left`)
   const rand = randInt(7)
   log(`Random integer generated: ${rand}`)
   if (rand === 6) {

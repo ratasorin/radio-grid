@@ -23,7 +23,7 @@ const generateSquares = (startID: number, props: GridProperties) =>
 
 class Grid extends Component<HTMLDivElement> {
   private readonly properties: GridProperties
-  private squares: Square[] = []
+  private _squares: Square[] = []
   private readonly resizeObserver: ResizeObserver
 
   constructor(properties: GridProperties) {
@@ -36,18 +36,14 @@ class Grid extends Component<HTMLDivElement> {
     })
   }
 
-  get currentSquareCount(): number {
-    return this.squares.length
-  }
-
   removeSquare(square: Square, animate: boolean): Promise<void> {
     const i = this.squares.indexOf(square)
     log(`Square ${i} will be removed`)
-    return this.squares.splice(i, 1)[0].destroy(animate)
+    return this._squares.splice(i, 1)[0].destroy(animate)
   }
 
-  get existingSquares(): ReadonlyArray<Square> {
-    return this.squares
+  get squares(): ReadonlyArray<Square> {
+    return this._squares
   }
 
   private getWidth(): number {
@@ -87,16 +83,16 @@ class Grid extends Component<HTMLDivElement> {
 
   setColors(colors: string[]): void {
     this.properties.colors = colors
-    this.squares.forEach((square) => (square.color = colors[randInt(colors.length)]))
+    this._squares.forEach((square) => (square.color = colors[randInt(colors.length)]))
   }
   async create<T extends HTMLElement>(parent: Component<T>, animate: boolean): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-extra-semi
     this.appendTo(parent)
     const { sideLength } = this.getSquareData()
     this.squareSideLength = sideLength
-    this.squares = generateSquares(0, this.properties)
+    this._squares = generateSquares(0, this.properties)
     this.addClass('grid--no-interaction')
-    await this.appendSquares(this.squares, animate)
+    await this.appendSquares(this._squares, animate)
     this.resizeObserver.observe(this.element)
     this.removeClass('grid--no-interaction')
   }
@@ -106,7 +102,7 @@ class Grid extends Component<HTMLDivElement> {
     this.addClass('grid--no-interaction')
     if (animate) {
       let promise: Promise<void> | undefined
-      for (let square = this.squares.pop(); square; square = this.squares.pop()) {
+      for (let square = this._squares.pop(); square; square = this._squares.pop()) {
         promise = square.destroy(true)
         await wait(50)
       }
