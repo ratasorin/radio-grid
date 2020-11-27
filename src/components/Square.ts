@@ -1,88 +1,75 @@
 import './Square.css'
 
-type SquareEventListener = (square: Square, event: Event) => void
+import { Component } from '../internal/Component'
+import { isDefined } from '../util'
+
+type SquareEventListener<K extends keyof HTMLElementEventMap> = (this: Square, event: HTMLElementEventMap[K]) => void
 
 type SquareEventListeners = {
-  [key: string]: SquareEventListener
+  [key in keyof HTMLElementEventMap]?: SquareEventListener<key>
 }
 
 interface SquareProperties {
-  id?: number
   color: string
   eventListeners?: SquareEventListeners
 }
 
-class Square {
-  private readonly element = document.createElement('div')
-  private userEvents: {
-    [key: string]: (ev: Event) => void
-  } = {}
+class Square extends Component<HTMLDivElement> {
+  private userEvents: SquareEventListeners = {}
 
   constructor(properties: SquareProperties) {
+    super({ tag: 'div', classList: ['grid__square'] })
+    ;({ color: this.color } = properties)
+    if (isDefined(properties.eventListeners)) {
+      const events = properties.eventListeners
+      ;(Object.keys(events) as (keyof SquareEventListeners)[])
+        .filter((key) => isDefined(events[key]))
+        .forEach((key) => {
+          this.userEvents[key] = (events[key] as SquareEventListener<typeof key>).bind(this)
+          this.addEventListener(key, this.userEvents[key] as SquareEventListener<typeof key>)
+        })
+    }
+    this.addEventListener('mouseenter', () => {
+      this.setStyle('z-index', `${2}`)
+    })
+    this.addEventListener('mouseleave', () => {
+      const events: (keyof SquareEventListeners)[] = ['transitionend', 'transitioncancel']
+      const transitionEventHandler = function (this: Square) {
+        this.setStyle('z-index', '')
+        events.forEach((event) => this.removeEventListener(event, transitionEventHandler))
+      }.bind(this)
+      this.setStyle('z-index', `${1}`)
+      events.forEach((event) => this.addEventListener(event, transitionEventHandler))
+    })
+  }
+
+  removeCustomEvent<K extends keyof SquareEventListeners>(event: K): void {
+    if (isDefined(this.userEvents[event])) {
+      this.removeEventListener(event, this.userEvents[event] as SquareEventListener<typeof event>)
+    }
+  }
+
+  addCustomEvent<K extends keyof SquareEventListeners>(event: K, callback: SquareEventListener<K>): void {
     // eslint-disable-next-line @typescript-eslint/no-extra-semi
-    this.element.classList.add('grid__square')
-    ;({ id: this.id, color: this.color } = properties)
-    for (const event in properties.eventListeners) {
-      if (Object.prototype.hasOwnProperty.call(properties.eventListeners, event)) {
-        const callback = properties.eventListeners[event]
-        this.addEventListener(event, callback)
-      }
-    }
-    this.element.addEventListener('mouseenter', () => {
-      this.element.style.zIndex = `${2}`
-    })
-    this.element.addEventListener('mouseleave', () => {
-      const events = ['transitionend', 'transitioncancel']
-      const transitionEventHandler = () => {
-        this.element.style.zIndex = ''
-        events.forEach((event) => this.element.removeEventListener(event, transitionEventHandler))
-      }
-      this.element.style.zIndex = `${1}`
-      events.forEach((event) => this.element.addEventListener(event, transitionEventHandler))
-    })
-  }
-
-  removeEventListener(event: string): void {
-    if (Object.prototype.hasOwnProperty.call(this.userEvents, event)) {
-      this.element.removeEventListener(event, this.userEvents[event])
-    }
-  }
-
-  addEventListener(event: string, callback: SquareEventListener): void {
-    const eventCallback = (ev: Event) => callback(this, ev)
-    this.userEvents[event] = eventCallback
-    this.element.addEventListener(event, eventCallback)
-  }
-
-  set id(value: number | undefined) {
-    if (value != 0 && !value) {
-      return
-    }
-    this.element.setAttribute('data-id', `${value}`)
-  }
-
-  get id(): number | undefined {
-    const id = this.element.getAttribute('data-id')
-    if (id) {
-      return parseInt(id, 10)
-    }
+    ;(this.userEvents[event] as SquareEventListener<K>) = callback.bind(this)
+    this.addEventListener(event, this.userEvents[event] as SquareEventListener<K>)
   }
 
   get color(): string {
-    return this.element.style.getPropertyValue('--color')
+    return this.getStyle('--color')
   }
 
   set color(color: string) {
-    this.element.style.setProperty('--color', color)
+    this.setStyle('--color', color)
   }
 
-  async appendTo(parent: Node, animate: boolean): Promise<void> {
-    parent.appendChild(this.element)
+  async create<T extends HTMLElement>(parent: Component<T>, animate: boolean): Promise<void> {
+    this.appendTo(parent)
     if (animate) {
-      this.element.classList.add('grid__square--inserted')
+      this.addClass('grid__square--inserted')
       await new Promise<void>((resolve) => {
-        this.element.addEventListener('animationend', () => {
-          this.element.classList.remove('grid__square--inserted')
+        this.addEventListener('animationend', () => {
+          this.removeClass('grid__square--inserted')
           resolve()
         })
       })
@@ -92,12 +79,11 @@ class Square {
   async destroy(animate: boolean): Promise<void> {
     if (animate) {
       await new Promise<void>((resolve) => {
-        this.element.addEventListener('animationend', () => resolve())
-        this.element.classList.add('grid__square--deleted')
+        this.addEventListener('animationend', () => resolve())
+        this.addClass('grid__square--deleted')
       })
     }
-    this.element.setAttribute('data-id', `${-1}`)
-    this.element.remove()
+    this.remove()
   }
 }
 
