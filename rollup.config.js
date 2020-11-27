@@ -8,6 +8,7 @@ import postcss from 'rollup-plugin-postcss'
 import postcssPresetEnv from 'postcss-preset-env'
 import cssnano from 'cssnano'
 import eslint from '@rollup/plugin-eslint'
+import injectProcessEnv from 'rollup-plugin-inject-process-env'
 
 export default ({ watch }) => ({
   input: './src/index.ts',
@@ -30,6 +31,9 @@ export default ({ watch }) => ({
     }),
     commonjs(),
     typescript(),
+    injectProcessEnv({
+      ENVIRONMENT: watch ? 'development' : undefined,
+    }),
     watch &&
       serve({
         port: 8080,
