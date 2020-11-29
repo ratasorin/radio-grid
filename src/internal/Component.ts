@@ -11,7 +11,7 @@ interface ComponentFromTag {
   classList?: string[]
 }
 
-export class Component<T extends HTMLElementTagNameMap[keyof HTMLElementTagNameMap]> {
+export class Component<T extends HTMLElement> {
   protected readonly element: T
   private readonly computedStyle: CSSStyleDeclaration
 
@@ -90,11 +90,12 @@ export class Component<T extends HTMLElementTagNameMap[keyof HTMLElementTagNameM
    * @param event The event type
    * @param callback The event callback
    */
-  protected addEventListener<K extends keyof HTMLElementEventMap, S extends Component<T>>(
-    event: K,
-    callback: (this: S, ev: HTMLElementEventMap[K]) => void
+  protected addEventListener<S extends Component<T>>(
+    event: keyof HTMLElementEventMap | string,
+    callback: (this: S, ev: Event) => void,
+    options?: boolean | AddEventListenerOptions
   ): void {
-    this.element.addEventListener(event, callback as EventListenerOrEventListenerObject)
+    this.element.addEventListener(event, callback, options)
   }
 
   /**
@@ -102,26 +103,27 @@ export class Component<T extends HTMLElementTagNameMap[keyof HTMLElementTagNameM
    * @param event The event type
    * @param callback The event callback
    */
-  protected removeEventListener<K extends keyof HTMLElementEventMap, S extends Component<T>>(
-    event: K,
-    callback: (this: S, ev: HTMLElementEventMap[K]) => void
+  protected removeEventListener<S extends Component<T>>(
+    event: keyof HTMLElementEventMap | string,
+    callback: (this: S, ev: Event) => void,
+    options?: boolean | EventListenerOptions
   ): void {
-    this.element.removeEventListener(event, callback as EventListenerOrEventListenerObject)
+    this.element.removeEventListener(event, callback, options)
   }
 
   protected get text(): string {
-    return this.element.textContent || ''
+    return this.element.innerText
   }
 
   protected set text(value: string) {
-    this.element.textContent = value
+    this.element.innerText
   }
 
   /**
    * Insert a component at the end of this component's tree
    * @param child The component to be appended
    */
-  protected append<CT extends HTMLElement>(child: Component<CT>): void {
+  protected append<T extends HTMLElement>(child: Component<T>): void {
     this.element.append(child.element)
   }
 
@@ -129,7 +131,7 @@ export class Component<T extends HTMLElementTagNameMap[keyof HTMLElementTagNameM
    * Append this component to another component's tree
    * @param parent The component to append to
    */
-  protected appendTo<PT extends HTMLElement>(parent: Component<PT>): void {
+  protected appendTo<T extends HTMLElement>(parent: Component<T>): void {
     parent.append(this)
   }
 
