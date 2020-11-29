@@ -1,17 +1,19 @@
 import './Grid.css'
 
 import { Component } from '../internal/Component'
-import { Square, SquareEventListeners } from './Square'
-import { generateArray, log, randInt, wait } from '../util'
+import { Square, SquareEventListener } from './Square'
+import { generateArray, baseLog, randInt, wait } from '../util'
 import ResizeObserver from 'resize-observer-polyfill'
 
 interface GridProperties {
   colors: string[]
   squareCount: number
-  squareEventListeners?: SquareEventListeners
+  squareEventListeners?: SquareEventListener[]
 }
 
-const generateSquares = (startID: number, props: GridProperties) =>
+const log = baseLog.extend('Grid')
+
+const generateSquares = (props: GridProperties) =>
   generateArray<Square>(
     props.squareCount,
     () =>
@@ -86,11 +88,12 @@ class Grid extends Component<HTMLDivElement> {
     this._squares.forEach((square) => (square.color = colors[randInt(colors.length)]))
   }
   async create<T extends HTMLElement>(parent: Component<T>, animate: boolean): Promise<void> {
+    log('Creating grid')
     // eslint-disable-next-line @typescript-eslint/no-extra-semi
     this.appendTo(parent)
     const { sideLength } = this.getSquareData()
     this.squareSideLength = sideLength
-    this._squares = generateSquares(0, this.properties)
+    this._squares = generateSquares(this.properties)
     this.addClass('grid--no-interaction')
     await this.appendSquares(this._squares, animate)
     this.resizeObserver.observe(this.element)
@@ -98,6 +101,7 @@ class Grid extends Component<HTMLDivElement> {
   }
 
   async destroy(animate: boolean): Promise<void> {
+    log('Destroying grid')
     this.resizeObserver.disconnect()
     this.addClass('grid--no-interaction')
     if (animate) {
