@@ -25,14 +25,15 @@ export default ({ watch }) => ({
     }),
     eslint(),
     resolve({
-      jsnext: true,
+      next: true,
       main: true,
       browser: true,
     }),
     commonjs(),
     typescript(),
     injectProcessEnv({
-      ENVIRONMENT: watch ? 'development' : undefined,
+      NODE_ENV: process.env.NODE_ENV,
+      DEBUG: process.env.DEBUG,
     }),
     watch &&
       serve({

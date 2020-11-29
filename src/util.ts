@@ -15,12 +15,13 @@ export class UnreachableError extends Error {
 
 export const wait = (time: number): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, time))
 
-const log = debug('app:log')
-if (process.env.ENVIRONMENT) {
-  debug.enable('*')
-  log('Logging is enabled!')
+export const keys = <T extends Record<string, unknown>>(o: T): (keyof T)[] => Object.keys(o) as (keyof T)[]
+
+export const baseLog = debug('square-grid')
+
+if (process.env.DEBUG) {
+  debug.enable(process.env.DEBUG)
 } else {
   debug.disable()
 }
-
-export { log }
+baseLog(`Environment: ${process.env.NODE_ENV}\nDebug namespaces: ${process.env.DEBUG}`)
