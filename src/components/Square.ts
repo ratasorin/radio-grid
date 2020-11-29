@@ -1,58 +1,46 @@
 import './Square.css'
 
 import { Component } from '../internal/Component'
-import { isDefined } from '../util'
 
-type SquareEventListener<K extends keyof HTMLElementEventMap> = (this: Square, event: HTMLElementEventMap[K]) => void
-
-type SquareEventListeners = {
-  [key in keyof HTMLElementEventMap]?: SquareEventListener<key>
+interface SquareEventListener {
+  event: string
+  callback: (this: Square, event: Event) => void
+  options?: boolean | AddEventListenerOptions
 }
 
 interface SquareProperties {
   color: string
-  eventListeners?: SquareEventListeners
+  eventListeners?: SquareEventListener[]
 }
 
 class Square extends Component<HTMLDivElement> {
-  private userEvents: SquareEventListeners = {}
+  private userEvents?: SquareEventListener[]
 
   constructor(properties: SquareProperties) {
     super({ tag: 'div', classList: ['grid__square'] })
-    ;({ color: this.color } = properties)
-    if (isDefined(properties.eventListeners)) {
-      const events = properties.eventListeners
-      ;(Object.keys(events) as (keyof SquareEventListeners)[])
-        .filter((key) => isDefined(events[key]))
-        .forEach((key) => {
-          this.userEvents[key] = (events[key] as SquareEventListener<typeof key>).bind(this)
-          this.addEventListener(key, this.userEvents[key] as SquareEventListener<typeof key>)
-        })
-    }
+    ;({ color: this.color, eventListeners: this.userEvents } = properties)
+    this.userEvents?.forEach((listener) => this.addCustomEvent(listener))
     this.addEventListener('mouseenter', () => {
       this.setStyle('z-index', `${2}`)
     })
     this.addEventListener('mouseleave', () => {
-      const events: (keyof SquareEventListeners)[] = ['transitionend', 'transitioncancel']
       const transitionEventHandler = function (this: Square) {
         this.setStyle('z-index', '')
-        events.forEach((event) => this.removeEventListener(event, transitionEventHandler))
+        this.removeEventListener('transitionend', transitionEventHandler)
       }.bind(this)
       this.setStyle('z-index', `${1}`)
-      events.forEach((event) => this.addEventListener(event, transitionEventHandler))
+      this.addEventListener('transitionend', transitionEventHandler)
     })
   }
 
-  removeCustomEvent<K extends keyof SquareEventListeners>(event: K): void {
-    if (isDefined(this.userEvents[event])) {
-      this.removeEventListener(event, this.userEvents[event] as SquareEventListener<typeof event>)
-    }
+  addCustomEvent(listener: SquareEventListener): void {
+    this.addEventListener(listener.event, listener.callback.bind(this), listener.options)
   }
 
-  addCustomEvent<K extends keyof SquareEventListeners>(event: K, callback: SquareEventListener<K>): void {
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
-    ;(this.userEvents[event] as SquareEventListener<K>) = callback.bind(this)
-    this.addEventListener(event, this.userEvents[event] as SquareEventListener<K>)
+  removeCustomEvent(listener: SquareEventListener): void {
+    if (this.userEvents?.includes(listener)) {
+      this.removeEventListener(listener.event, listener.callback, listener.options)
+    }
   }
 
   get color(): string {
@@ -87,4 +75,4 @@ class Square extends Component<HTMLDivElement> {
   }
 }
 
-export { Square, SquareProperties, SquareEventListeners, SquareEventListener }
+export { Square, SquareProperties, SquareEventListener }

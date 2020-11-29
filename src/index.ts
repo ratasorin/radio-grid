@@ -2,9 +2,11 @@ import './reset.css'
 import './style.css'
 
 import { Grid } from './components/Grid'
-import { log, randInt } from './util'
-import { SquareEventListener } from './components/Square'
+import { baseLog, randInt } from './util'
+import { Square } from './components/Square'
 import { Component } from './internal/Component'
+
+const log = baseLog.extend('index')
 
 const colorSchemes = [
   ['#fdc5f5', '#f7aef8', '#b388eb', '#8093f1', '#72ddf7'],
@@ -19,42 +21,47 @@ if (!gridParentDOM) {
 }
 const gridParent = Component.from(gridParentDOM)
 
-let ignoreClicks = false
+const squareMousedown = (() => {
+  let ignoreClicks = false
 
-const squareMousedown: SquareEventListener<'mousedown'> = async function () {
-  if (ignoreClicks) {
-    return
+  return async function (this: Square) {
+    if (ignoreClicks) {
+      return
+    }
+    grid.removeSquare(this, true)
+    log(`${grid.squares.length} squares left`)
+    const rand = randInt(7)
+    log(`Random number generated: ${rand}`)
+    if (rand === 6) {
+      ignoreClicks = true
+      await grid.destroy(true)
+      await grid.create(gridParent, true)
+    }
+    ignoreClicks = false
   }
-  const removed = grid.removeSquare(this, true)
-  log(`${grid.squares.length} squares left`)
-  const rand = randInt(7)
-  log(`Random integer generated: ${rand}`)
-  if (rand === 6) {
-    ignoreClicks = true
-    await removed
-    await grid.destroy(true)
-    await grid.create(gridParent, true)
-  }
-  ignoreClicks = false
-}
+})()
 
 const grid = new Grid({
   squareCount: 48,
   colors: colorSchemes[prefersDarkMode.matches ? 0 : 1],
-  squareEventListeners: {
-    mousedown: squareMousedown,
-  },
+  squareEventListeners: [
+    {
+      event: 'mousedown',
+      callback: squareMousedown,
+    },
+  ],
+})
+
+prefersDarkMode.addEventListener('change', (ev) => {
+  if (ev.matches) {
+    grid.setColors(colorSchemes[0])
+  } else {
+    grid.setColors(colorSchemes[1])
+  }
 })
 
 const main = async () => {
   await grid.create(gridParent, true)
-  prefersDarkMode.addEventListener('change', (ev) => {
-    if (ev.matches) {
-      grid.setColors(colorSchemes[0])
-    } else {
-      grid.setColors(colorSchemes[1])
-    }
-  })
 }
 
 main()
