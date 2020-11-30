@@ -2,8 +2,8 @@ import './reset.css'
 import './style.css'
 
 import { Grid } from './components/Grid'
-import { baseLog, randInt } from './util'
-import { Square } from './components/Square'
+import { baseLog, isDefined, randInt } from './util'
+import { Square, SquareEventListener } from './components/Square'
 import { Component } from './internal/Component'
 
 const log = baseLog.extend('index')
@@ -21,44 +21,48 @@ if (!gridParentDOM) {
 }
 const gridParent = Component.from(gridParentDOM)
 
-const squareMousedown = (() => {
-  let ignoreClicks = false
-
-  return async function (this: Square) {
-    if (ignoreClicks) {
-      return
+const squareMousedown: SquareEventListener = {
+  event: 'mousedown',
+  callback: (() => {
+    let ignoreClicks = false
+    // TODO: Better square removal method
+    return async function (this: Square) {
+      if (ignoreClicks) {
+        return
+      }
+      grid.removeSquare(this).destroy(true)
+      log('%d squares left', grid.squareCount)
+      const rand = randInt(7)
+      log(`Random number generated: ${rand}`)
+      if (rand === 6) {
+        ignoreClicks = true
+        await grid.destroy(true)
+        await grid.create(gridParent, true)
+      }
+      ignoreClicks = false
     }
-    grid.removeSquare(this, true)
-    log(`${grid.squares.length} squares left`)
-    const rand = randInt(7)
-    log(`Random number generated: ${rand}`)
-    if (rand === 6) {
-      ignoreClicks = true
-      await grid.destroy(true)
-      await grid.create(gridParent, true)
-    }
-    ignoreClicks = false
-  }
-})()
+  })(),
+}
 
 const grid = new Grid({
-  squareCount: 48,
   colors: colorSchemes[prefersDarkMode.matches ? 0 : 1],
-  squareEventListeners: [
-    {
-      event: 'mousedown',
-      callback: squareMousedown,
-    },
-  ],
+  squareEventListeners: [squareMousedown],
 })
 
-prefersDarkMode.addEventListener('change', (ev) => {
+function colorSchemeListener(this: MediaQueryList, ev: MediaQueryListEvent): void {
   if (ev.matches) {
     grid.setColors(colorSchemes[0])
   } else {
     grid.setColors(colorSchemes[1])
   }
-})
+}
+
+if (isDefined(prefersDarkMode.addEventListener)) {
+  prefersDarkMode.addEventListener('change', colorSchemeListener)
+} else {
+  // for Safari
+  prefersDarkMode.addListener(colorSchemeListener)
+}
 
 const main = async () => {
   await grid.create(gridParent, true)
