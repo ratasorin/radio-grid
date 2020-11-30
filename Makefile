@@ -9,7 +9,7 @@ dev:
 		--mount type=bind,source=$(PWD),target=/home/node/app \
 		--mount type=volume,target=/home/node/app/node_modules \
 		-p 8080:8080 -p 35729:35729 \
-		-e NODE_ENV=development -e DEBUG=* \
+		-e NODE_ENV=development -e DEBUG=square-grid* \
 		--rm \
 		-dit \
 		$(dev-image-name)
