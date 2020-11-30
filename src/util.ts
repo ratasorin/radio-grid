@@ -8,7 +8,7 @@ export const randInt = (limit: number): number => Math.floor(Math.random() * lim
 export const isDefined = <T>(arg: T | undefined): arg is T => typeof arg !== 'undefined'
 
 export class UnreachableError extends Error {
-  constructor(x: never, message: string) {
+  constructor(_x: never, message: string) {
     super(`TypeScript thought we could never end up here\n${message}`)
   }
 }
