@@ -31,6 +31,7 @@ export default ({ watch }) => ({
     }),
     commonjs(),
     typescript(),
+    // FIXME: Polyfill globalThis so it works with injectProcessEnv
     injectProcessEnv({
       NODE_ENV: process.env.NODE_ENV,
       DEBUG: process.env.DEBUG,
