@@ -25,7 +25,7 @@ const squareMousedown: SquareEventListener = {
   event: 'mousedown',
   callback: (() => {
     let ignoreClicks = false
-    // TODO: Better square removal method
+    // FIXME: Better square removal method
     return async function (this: Square) {
       if (ignoreClicks) {
         return
