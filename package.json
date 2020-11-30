@@ -1,6 +1,6 @@
 {
   "name": "square-grid",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Static site generating a grid of squares covering the whole viewport",
   "scripts": {
     "dev": "rollup -c -w",
