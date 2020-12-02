@@ -24,10 +24,18 @@ const generateSquares = (props: Required<GridProperties>) =>
       })
   )
 
+const getDelay = (base: number, current: number, total: number): number => {
+  const exp = Math.floor(total / 2)
+  const magnitude = Math.floor((10 * exp) / 9)
+  const progress = current / total
+  const delay = base + Math.floor(Math.pow(progress, exp) * magnitude * base)
+  return delay
+}
+
 const defaultProps: Required<GridProperties> = {
   colors: ['#000'],
   animationDelay: 50,
-  squareCount: 48,
+  squareCount: 102,
   squareEventListeners: [],
 }
 
@@ -107,11 +115,13 @@ class Grid extends Component<HTMLDivElement> {
 
   private async appendSquares(squares: Square[], animate: boolean): Promise<void> {
     let promise: Promise<void> | undefined
+    let i = this.squares.length
     this.squares.push(...squares)
-    for (const square of squares) {
+    for (; i < this.squares.length; i++) {
+      const square = this.squares[i]
       promise = square.create(this, animate)
       if (animate) {
-        await wait(this.properties.animationDelay)
+        await Promise.race([promise, wait(getDelay(this.properties.animationDelay, i, this.squares.length))])
       }
     }
     await promise
