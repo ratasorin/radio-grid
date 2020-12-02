@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "rollup -c -w",
     "build": "rollup -c",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests --maxWorkers=1"
   },
   "repository": {
     "type": "git",
