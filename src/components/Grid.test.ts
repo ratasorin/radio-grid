@@ -1,14 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 import { Component } from '../internal/Component'
-import { randInt } from '../util'
+import { randInt, fireClick } from '../util'
 import { Grid } from './Grid'
-
-const fireClick = (element: Node) => {
-  const ev = document.createEvent('MouseEvents')
-  ev.initEvent('click', true, false)
-  element.dispatchEvent(ev)
-}
 
 test('Grid', async () => {
   document.write(fs.readFileSync(path.resolve(__dirname, '..', '..', 'public', 'index.html')).toString())

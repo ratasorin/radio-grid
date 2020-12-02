@@ -13,6 +13,12 @@ export class UnreachableError extends Error {
   }
 }
 
+export const fireClick = (element: Node): void => {
+  const ev = document.createEvent('MouseEvents')
+  ev.initEvent('click', true, false)
+  element.dispatchEvent(ev)
+}
+
 export const wait = (time: number): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, time))
 
 export const keys = <T extends Record<string, unknown>>(o: T): (keyof T)[] => Object.keys(o) as (keyof T)[]
