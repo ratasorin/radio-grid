@@ -131,8 +131,24 @@ class Grid extends Component<HTMLDivElement> {
     const count = this.properties.squareCount
     const width = this.getWidth()
     const height = this.getHeight()
-    const sideLength = Math.sqrt((width * height) / count)
-    return { sideLength }
+
+    const ratio = width / height
+    const colCount = Math.sqrt(count * ratio)
+    const rowCount = count / colCount
+
+    const getSidelength = (row: number, height: number) => {
+      let rowCount = Math.ceil(row)
+      let colCount = Math.ceil(count / rowCount)
+      while (rowCount * ratio < colCount) {
+        rowCount++
+        colCount = Math.ceil(height / rowCount)
+      }
+      return height / rowCount
+    }
+
+    return {
+      sideLength: Math.max(getSidelength(rowCount, height), getSidelength(colCount, width)),
+    }
   }
 }
 
