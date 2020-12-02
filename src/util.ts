@@ -1,23 +1,33 @@
-const generateArray = <T>(
-  length: number,
-  generatorFunc: (elem: T, index: number, array: T[]) => T
-): T[] => new Array(length).fill(null).map(generatorFunc)
+import debug from 'debug'
 
-const randInt = (limit: number) => Math.floor(Math.random() * limit)
+export const generateArray = <T>(length: number, generatorFunc: (elem: T, index: number, array: T[]) => T): T[] =>
+  new Array(length).fill(null).map(generatorFunc)
 
-const appendElements = <T>(
-  parent: Element,
-  elements: T[],
-  elemRetrievalFunc = (elem: T | Node) => elem as Node
-) => {
-  elements.forEach((elem) => parent.appendChild(elemRetrievalFunc(elem)))
-}
+export const randInt = (limit: number): number => Math.floor(Math.random() * limit)
 
-const GCD = (a: number, b: number): number => {
-  if (b === 0) {
-    return a
+export const isDefined = <T>(arg: T | undefined): arg is T => typeof arg !== 'undefined'
+
+export class UnreachableError extends Error {
+  constructor(_x: never, message: string) {
+    super(`TypeScript thought we could never end up here\n${message}`)
   }
-  return GCD(b, a % b)
 }
 
-export { generateArray, randInt, appendElements, GCD }
+export const fireClick = (element: Node): void => {
+  const ev = document.createEvent('HTMLEvents')
+  ev.initEvent('click', true, false)
+  element.dispatchEvent(ev)
+}
+
+export const wait = (time: number): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, time))
+
+export const keys = <T extends Record<string, unknown>>(o: T): (keyof T)[] => Object.keys(o) as (keyof T)[]
+
+export const baseLog = debug('square-grid')
+
+if (process.env.DEBUG) {
+  debug.enable(process.env.DEBUG)
+} else {
+  debug.disable()
+}
+baseLog(`Environment: ${process.env.NODE_ENV}\nDebug namespaces: ${process.env.DEBUG}`)

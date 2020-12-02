@@ -1,135 +1,154 @@
-import ResizeObserver from 'resize-observer-polyfill'
-import { Square, SquareEventListeners } from './Square'
-import { generateArray, randInt } from '../util'
-
 import './Grid.css'
 
+import { Component } from '../internal/Component'
+import { Square, SquareEventListener } from './Square'
+import { generateArray, baseLog, randInt, wait } from '../util'
+import ResizeObserver from 'resize-observer-polyfill'
+
 interface GridProperties {
-  target: HTMLElement
-  props: {
-    width: string
-    height: string
-    squaresPerRow: number
-    colors: string[]
-    squareEventListeners?: SquareEventListeners
-  }
+  colors?: string[]
+  animationDelay?: number
+  squareCount?: number
+  squareEventListeners?: SquareEventListener[]
 }
 
-class Grid {
-  private readonly element = document.createElement('div')
-  private readonly grid = document.createElement('div')
-  private readonly colors: string[]
-  private readonly squaresPerRow: number
-  private squares: Square[]
+const log = baseLog.extend('Grid')
+
+const generateSquares = (props: Required<GridProperties>) =>
+  generateArray<Square>(
+    props.squareCount,
+    () =>
+      new Square({
+        color: props.colors[randInt(props.colors.length)],
+        eventListeners: props.squareEventListeners,
+      })
+  )
+
+const getDelay = (base: number, current: number, total: number): number => {
+  const exp = Math.floor(total / 2)
+  const magnitude = Math.floor((10 * exp) / 9)
+  const progress = current / total
+  const delay = base + Math.floor(Math.pow(progress, exp) * magnitude * base)
+  return delay
+}
+
+const defaultProps: Required<GridProperties> = {
+  colors: ['#000'],
+  animationDelay: 50,
+  squareCount: 102,
+  squareEventListeners: [],
+}
+
+class Grid extends Component<HTMLDivElement> {
+  private readonly properties: Required<GridProperties>
+  private squares: Square[] = []
+  private readonly resizeObserver: ResizeObserver
 
   constructor(properties: GridProperties) {
-    this.element.classList.add('grid__parent')
-    properties.target.appendChild(this.element)
-    this.grid.classList.add('grid')
-    this.element.appendChild(this.grid)
-    ;({
-      props: {
-        colors: this.colors,
-        width: this.width,
-        height: this.height,
-        squaresPerRow: this.squaresPerRow,
-      },
-    } = properties)
-    const { sideLength, count } = this.getSquareData()
-    this.squareSideLength = sideLength
-    this.squares = generateArray(
-      count,
-      () =>
-        new Square({
-          color: this.colors[randInt(this.colors.length)],
-          eventListeners: properties.props.squareEventListeners,
-        })
-    )
-    for (const square of this.squares) {
-      square.appendTo(this.grid)
-    }
-    const observer = new ResizeObserver(() => {
-      const { count, sideLength } = this.getSquareData()
-      const currentCount = this.grid.children.length
-      const difference = count - currentCount
-      if (difference > 0) {
-        const newSquares = generateArray(
-          difference,
-          () =>
-            new Square({
-              color: this.colors[randInt(this.colors.length)],
-              eventListeners: properties.props.squareEventListeners,
-            })
-        )
-        for (const square of newSquares) {
-          square.appendTo(this.grid)
-        }
-        this.squares = this.squares.concat(newSquares)
-      } else {
-        this.squares.splice(count).forEach((square) => square.destroy(false))
-      }
+    super({ tag: 'div', classList: ['grid'] })
+    this.properties = { ...defaultProps, ...properties }
+    log('Grid properties: %O', this.properties)
+    this.addClass('grid')
+    this.resizeObserver = new ResizeObserver(() => {
+      const { sideLength } = this.getSquareData()
       this.squareSideLength = sideLength
     })
-    observer.observe(this.element)
   }
 
-  private get width(): string {
-    return this.element.style.getPropertyValue('--width')
+  setColors(colors: string[]): void {
+    this.properties.colors = colors
+    this.squares.forEach((square) => (square.color = colors[randInt(colors.length)]))
   }
-  private set width(width: string) {
-    this.element.style.setProperty('--width', width)
+
+  get squareCount(): number {
+    return this.squares.length
   }
+
+  removeSquare(square: Square): Square {
+    const i = this.squares.indexOf(square)
+    log('Square %d removed', i)
+    return this.squares.splice(i, 1)[0]
+  }
+
+  async create<T extends HTMLElement>(parent: Component<T>, animate: boolean): Promise<void> {
+    log('Creating grid')
+    this.appendTo(parent)
+    const { sideLength } = this.getSquareData()
+    this.squareSideLength = sideLength
+    this.addClass('grid--no-interaction')
+    await this.appendSquares(generateSquares(this.properties), animate)
+    this.resizeObserver.observe(this.element)
+    this.removeClass('grid--no-interaction')
+  }
+
+  async destroy(animate: boolean): Promise<void> {
+    log('Destroying grid')
+    this.resizeObserver.disconnect()
+    this.addClass('grid--no-interaction')
+    if (animate) {
+      let promise: Promise<void> | undefined
+      for (let square = this.squares.pop(); square; square = this.squares.pop()) {
+        promise = square.destroy(true)
+        await wait(this.properties.animationDelay)
+      }
+      await promise
+    }
+    this.removeClass('grid--no-interaction')
+    this.remove()
+  }
+
   private getWidth(): number {
-    return parseInt(window.getComputedStyle(this.element).width, 10)
+    return parseInt(this.getComputedStyle('width'))
   }
-  private get height(): string {
-    return this.element.style.getPropertyValue('--height')
-  }
-  private set height(height: string) {
-    this.element.style.setProperty('--height', height)
-  }
+
   private getHeight(): number {
-    return parseInt(window.getComputedStyle(this.element).height, 10)
+    return parseInt(this.getComputedStyle('height'))
   }
+
   private get squareSideLength(): number {
-    return parseInt(this.grid.style.getPropertyValue('--size'), 10)
+    return parseInt(this.getStyle('--size'))
   }
+
   private set squareSideLength(squareSideLength: number) {
-    this.grid.style.setProperty('--size', `${squareSideLength}px`)
+    this.setStyle('--size', `${squareSideLength}px`)
   }
+
+  private async appendSquares(squares: Square[], animate: boolean): Promise<void> {
+    let promise: Promise<void> | undefined
+    let i = this.squares.length
+    this.squares.push(...squares)
+    for (; i < this.squares.length; i++) {
+      const square = this.squares[i]
+      promise = square.create(this, animate)
+      if (animate) {
+        await Promise.race([promise, wait(getDelay(this.properties.animationDelay, i, this.squares.length))])
+      }
+    }
+    await promise
+  }
+
   private getSquareData() {
+    const count = this.properties.squareCount
     const width = this.getWidth()
     const height = this.getHeight()
-    const sideLength = Math.max(width, height) / this.squaresPerRow
-    // TODO: Fix generation of excess squares
-    const count =
-      (this.squaresPerRow + 1) * (Math.floor(height / sideLength) + 1)
-    return { sideLength, count }
-  }
 
-  destroy(animate: boolean) {
-    return new Promise<void>((resolve) => {
-      const remove = () => {
-        this.element.remove()
-        resolve()
+    const ratio = width / height
+    const colCount = Math.sqrt(count * ratio)
+    const rowCount = count / colCount
+
+    const getSidelength = (row: number, height: number) => {
+      let rowCount = Math.ceil(row)
+      let colCount = Math.ceil(count / rowCount)
+      while (rowCount * ratio < colCount) {
+        rowCount++
+        colCount = Math.ceil(height / rowCount)
       }
-      if (!this.element) {
-        resolve()
-      }
-      if (animate) {
-        let promise: Promise<void>
-        const interval = setInterval(async () => {
-          if (this.squares.length === 0) {
-            clearInterval(interval)
-            await promise
-            remove()
-          }
-          promise = this.squares.pop()?.destroy(true) || promise
-        }, 50)
-      } else {
-        remove()
-      }
-    })
+      return height / rowCount
+    }
+
+    return {
+      sideLength: Math.max(getSidelength(rowCount, height), getSidelength(colCount, width)),
+    }
   }
 }
 

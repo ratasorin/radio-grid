@@ -3,6 +3,7 @@ WORKDIR /build
 COPY package*.json ./
 RUN npm ci
 COPY . .
+RUN npm t
 RUN npm run build
 
 FROM nginx:1.19-alpine

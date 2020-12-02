@@ -1,58 +1,68 @@
 import './Square.css'
 
-type SquareEventListener = (square: Square, event: Event) => void
+import { Component } from '../internal/Component'
 
-type SquareEventListeners = {
-  [key: string]: SquareEventListener
+interface SquareEventListener {
+  event: string
+  callback: (this: Square, event: Event) => void
+  options?: boolean | AddEventListenerOptions
 }
 
 interface SquareProperties {
   color: string
-  eventListeners?: SquareEventListeners
+  eventListeners?: SquareEventListener[]
 }
 
-class Square {
-  private readonly element = document.createElement('div')
+class Square extends Component<HTMLDivElement> {
+  private userEvents?: SquareEventListener[]
 
   constructor(properties: SquareProperties) {
-    this.color = properties.color
-    this.element.classList.add('grid__square')
-    const events = properties.eventListeners
-    for (const event in events) {
-      if (Object.prototype.hasOwnProperty.call(events, event)) {
-        const callback = events[event]
-        this.element.addEventListener(event, (ev) => callback(this, ev))
-      }
-    }
+    super({ tag: 'div', classList: ['grid__square'] })
+    ;({ color: this.color, eventListeners: this.userEvents } = properties)
+    this.userEvents?.forEach((listener) => this.addEventListener(listener.event, listener.callback.bind(this), listener.options))
+    this.addEventListener('mouseenter', () => {
+      this.setStyle('z-index', `${2}`)
+    })
+    this.addEventListener('mouseleave', () => {
+      const transitionEventHandler = function (this: Square) {
+        this.setStyle('z-index', '')
+        this.removeEventListener('transitionend', transitionEventHandler)
+      }.bind(this)
+      this.setStyle('z-index', `${1}`)
+      this.addEventListener('transitionend', transitionEventHandler)
+    })
   }
 
   get color(): string {
-    return this.element.style.getPropertyValue('--color')
-  }
-  set color(color: string) {
-    this.element.style.setProperty('--color', color)
+    return this.getStyle('--color')
   }
 
-  appendTo(parent: Node) {
-    parent.appendChild(this.element)
+  set color(color: string) {
+    this.setStyle('--color', color)
   }
-  destroy(animate: boolean) {
-    return new Promise<void>((resolve) => {
-      const remove = () => {
-        this.element.remove()
-        resolve()
-      }
-      if (!this.element) {
-        resolve()
-      }
-      if (animate) {
-        this.element.addEventListener('transitionend', remove)
-        this.element.classList.add('grid__square--deleted')
-      } else {
-        remove()
-      }
-    })
+
+  async create<T extends HTMLElement>(parent: Component<T>, animate: boolean): Promise<void> {
+    this.appendTo(parent)
+    if (animate) {
+      this.addClass('grid__square--inserted')
+      await new Promise<void>((resolve) => {
+        this.addEventListener('animationend', () => {
+          this.removeClass('grid__square--inserted')
+          resolve()
+        })
+      })
+    }
+  }
+
+  async destroy(animate: boolean): Promise<void> {
+    if (animate) {
+      await new Promise<void>((resolve) => {
+        this.addEventListener('animationend', () => resolve())
+        this.addClass('grid__square--deleted')
+      })
+    }
+    this.remove()
   }
 }
 
-export { Square, SquareProperties, SquareEventListeners, SquareEventListener }
+export { Square, SquareProperties, SquareEventListener }

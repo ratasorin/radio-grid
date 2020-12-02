@@ -1,33 +1,46 @@
-import { Grid, GridProperties } from './components/Grid'
-import { generateArray, randInt } from './util'
-
 import './reset.css'
 import './style.css'
 
-const colors = [['#fdc5f5', '#f7aef8', '#b388eb', '#8093f1', '#72ddf7']]
+import { Grid } from './components/Grid'
+import { randInt } from './util'
+import { Square } from './components/Square'
+import { Component } from './internal/Component'
 
-// TODO: Fix bug where multiple grids are created
-const grids: Grid[] = generateArray(colors.length, (_, i) => {
-  const size = 100 / colors.length
-  let grid: Grid
-  const gridProperties: GridProperties = {
-    target: document.body,
-    props: {
-      width: `${size}vw`,
-      height: `${size}vh`,
-      squaresPerRow: 10,
-      colors: colors[i],
-      squareEventListeners: {
-        click: async (square) => {
-          await square.destroy(true)
-          if (randInt(7) === 6) {
-            await grid.destroy(true)
-            grids[i] = new Grid(gridProperties)
-          }
-        },
-      },
-    },
+const gridParentDOM = document.querySelector<HTMLElement>('.grid__parent')
+if (!gridParentDOM) {
+  throw new Error(`Grid parent doesn't exist in the HTML document!`)
+}
+const gridParent = Component.from(gridParentDOM)
+
+const squareMousedown = (() => {
+  let ignoreClicks = false
+  return async function (this: Square) {
+    if (ignoreClicks) {
+      return
+    }
+    grid.removeSquare(this).destroy(true)
+    if (grid.squareCount === randInt(grid.squareCount + 1)) {
+      ignoreClicks = true
+      await grid.destroy(true)
+      await grid.create(gridParent, true)
+    }
+    ignoreClicks = false
   }
-  grid = new Grid(gridProperties)
-  return grid
+})()
+
+const grid = new Grid({
+  squareCount: 48,
+  colors: ['cotton-candy', 'mauve', 'lavender-floral', 'cornflower-blue', 'sky-blue'].map((color) => `var(--color-${color})`),
+  squareEventListeners: [
+    {
+      event: 'mousedown',
+      callback: squareMousedown,
+    },
+  ],
 })
+
+const main = async () => {
+  await grid.create(gridParent, true)
+}
+
+main()
