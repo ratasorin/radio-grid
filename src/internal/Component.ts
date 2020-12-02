@@ -116,7 +116,7 @@ export class Component<T extends HTMLElement> {
   }
 
   protected set text(value: string) {
-    this.element.innerText
+    this.element.innerText = value
   }
 
   /**
