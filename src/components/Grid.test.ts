@@ -3,6 +3,7 @@ import path from 'path'
 import { Component } from '../internal/Component'
 import { randInt, fireClick } from '../util'
 import { Grid } from './Grid'
+import { Square } from './Square'
 
 test('Grid', async () => {
   document.write(fs.readFileSync(path.resolve(__dirname, '..', '..', 'public', 'index.html')).toString())
@@ -10,18 +11,19 @@ test('Grid', async () => {
   expect(parentDOM).not.toBeNull()
   const colors = ['#000', '#fff']
   const squareCount = 48
+  const handler = jest.fn(async function (this: Square) {
+    expect(colors).toContain(this.color)
+    const prevSquareCount = grid.squareCount
+    await grid.removeSquare(this).destroy(false)
+    expect(grid.squareCount).toBe(prevSquareCount - 1)
+  })
   const grid = new Grid({
     squareCount: squareCount,
     colors: colors,
     squareEventListeners: [
       {
         event: 'click',
-        async callback() {
-          expect(colors).toContain(this.color)
-          const prevSquareCount = grid.squareCount
-          await grid.removeSquare(this).destroy(false)
-          expect(grid.squareCount).toBe(prevSquareCount - 1)
-        },
+        callback: handler,
       },
     ],
   })
@@ -30,5 +32,6 @@ test('Grid', async () => {
   const gridDOM = parentDOM.querySelector('.grid') as HTMLElement
   expect(gridDOM).not.toBeNull()
   expect(gridDOM.children.length).toBe(squareCount)
-  fireClick(gridDOM.children.item(randInt(gridDOM.childNodes.length)) as Element)
+  fireClick(gridDOM.children.item(randInt(gridDOM.children.length)) as Element)
+  expect(handler).toBeCalled()
 })

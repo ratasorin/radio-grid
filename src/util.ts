@@ -14,7 +14,7 @@ export class UnreachableError extends Error {
 }
 
 export const fireClick = (element: Node): void => {
-  const ev = document.createEvent('MouseEvents')
+  const ev = document.createEvent('HTMLEvents')
   ev.initEvent('click', true, false)
   element.dispatchEvent(ev)
 }
