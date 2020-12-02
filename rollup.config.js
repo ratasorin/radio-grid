@@ -8,12 +8,12 @@ import postcss from 'rollup-plugin-postcss'
 import postcssPresetEnv from 'postcss-preset-env'
 import cssnano from 'cssnano'
 import eslint from '@rollup/plugin-eslint'
-import injectProcessEnv from 'rollup-plugin-inject-process-env'
+import injectProcessEnv from '@tmaxmax/rollup-plugin-inject-process-env'
 
 export default ({ watch }) => ({
   input: './src/index.ts',
   output: {
-    sourcemap: watch,
+    sourcemap: true,
     format: 'iife',
     file: './public/build/bundle.js',
     name: 'grid',
@@ -31,7 +31,6 @@ export default ({ watch }) => ({
     }),
     commonjs(),
     typescript(),
-    // FIXME: Polyfill globalThis so it works with injectProcessEnv
     injectProcessEnv({
       NODE_ENV: process.env.NODE_ENV,
       DEBUG: process.env.DEBUG,
