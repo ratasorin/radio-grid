@@ -19,7 +19,7 @@ class Square extends Component<HTMLDivElement> {
   constructor(properties: SquareProperties) {
     super({ tag: 'div', classList: ['grid__square'] })
     ;({ color: this.color, eventListeners: this.userEvents } = properties)
-    this.userEvents?.forEach((listener) => this.addCustomEvent(listener))
+    this.userEvents?.forEach((listener) => this.addEventListener(listener.event, listener.callback.bind(this), listener.options))
     this.addEventListener('mouseenter', () => {
       this.setStyle('z-index', `${2}`)
     })
@@ -31,16 +31,6 @@ class Square extends Component<HTMLDivElement> {
       this.setStyle('z-index', `${1}`)
       this.addEventListener('transitionend', transitionEventHandler)
     })
-  }
-
-  addCustomEvent(listener: SquareEventListener): void {
-    this.addEventListener(listener.event, listener.callback.bind(this), listener.options)
-  }
-
-  removeCustomEvent(listener: SquareEventListener): void {
-    if (this.userEvents?.includes(listener)) {
-      this.removeEventListener(listener.event, listener.callback, listener.options)
-    }
   }
 
   get color(): string {
