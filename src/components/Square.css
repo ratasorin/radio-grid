@@ -20,6 +20,7 @@
   animation-name: delete-grid__square;
   animation-duration: 0.5s;
   animation-timing-function: ease-out;
+  pointer-events: none;
 }
 
 @keyframes insert-grid__square {
@@ -39,6 +40,7 @@
   animation-name: insert-grid__square;
   animation-duration: 0.5s;
   animation-timing-function: ease-out;
+  pointer-events: none;
 }
 
 .grid__square:hover {

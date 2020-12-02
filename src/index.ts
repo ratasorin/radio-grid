@@ -14,7 +14,6 @@ const gridParent = Component.from(gridParentDOM)
 
 const squareMousedown = (() => {
   let ignoreClicks = false
-  // FIXME: Better square removal method
   return async function (this: Square) {
     if (ignoreClicks) {
       return
